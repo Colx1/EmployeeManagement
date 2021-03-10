@@ -1,0 +1,83 @@
+﻿@inherits LayoutComponentBase
+
+@inject HttpClient httpClient
+@inject IJSRuntime Js
+@inject NavigationManager uriHelper
+
+
+<div class="content px-4">
+    <div class="box">
+        <div class="box-head">
+            <h3 class="title">@Title_CompanyLst</h3>
+        </div>
+        <div class="box-body">
+            <h3>@Title_CompanyLst</h3>
+
+            @if (!CompanyListModel.Any())
+            {
+                <p>Loading...</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Company Name</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Company in CompanyListModel)
+                            {
+                                <tr>
+                                    <td>@Company.Id</td>
+                                    <td>@Company.CompanyName</td>
+                                    <td>
+                                        <a href="@($"/editcompany/{Company.Id}")" class="btn btn-primary">Edit</a>
+                                        <button @onclick="@(() => DeleteCompanyRecord(Company.Id))" class="btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private string Title_CompanyLst { get; set; } = "Company List";
+
+    public List<CompanyViewModel> CompanyListModel = new List<CompanyViewModel>();
+
+    [Inject]
+    public ApiUri ApiUri { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CompanyListModel = await httpClient.GetFromJsonAsync<List<CompanyViewModel>>
+            ($"{ApiUri.ApiUriAddress}/api/Product/GetCompanies");
+    }
+
+    protected async Task DeleteCompanyRecord(int companyId)
+    {
+        var response = await Js.InvokeAsync<JsonResponse>("swal.fire", Swal.Param());
+        if (response.Value)
+        {
+            var Res = await httpClient.DeleteAsync($"{ApiUri.ApiUriAddress}/api/Product/DeleteCompany/{companyId}");
+            var ResModel = await Res.Content.ReadFromJsonAsync<ResponseModel>();
+
+            if (Res.StatusCode.ToString() == "OK")
+            {
+                await Js.InvokeVoidAsync("toastr.warning", "Company deleted", "Succeed");
+                await OnInitializedAsync();
+            }
+            else
+                await Js.InvokeVoidAsync("toastr.error", $"{ResModel.Error}", "Error");
+        }
+    }
+}

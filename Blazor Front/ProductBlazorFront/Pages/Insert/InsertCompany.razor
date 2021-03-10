@@ -1,0 +1,57 @@
+﻿@inherits LayoutComponentBase
+@inject HttpClient httpClient
+@inject IJSRuntime Js
+
+<div class="content px-4">
+    <div class="box">
+        <div class="box-head">
+            <h3 class="title">@Title_InsComp</h3>
+        </div>
+        <div class="box-body">
+            <EditForm Model="CompanyModel" OnValidSubmit="AddCompany">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+                <h3>@Title_InsComp</h3>
+                <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+                    <div class="form-group my-2">
+                        <label>Company Name:</label>
+                        <input type="text" class="form-control" @bind-value="CompanyModel.CompanyName" />
+                        <ValidationMessage For="@(() => CompanyModel.CompanyName)" />
+                    </div>
+
+                    <button type="submit" class="btn btn-success mt-2">Add Company</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string Title_InsComp { get; set; } = "Insert Company";
+
+    public CompanyViewModel CompanyModel = new CompanyViewModel();
+
+    [Inject]
+    public ApiUri ApiUri { get; set; }
+
+    async Task AddCompany()
+    {
+        var Res = await httpClient.PostAsJsonAsync($"{ApiUri.ApiUriAddress}/api/Product/InsertCompany", CompanyModel);
+        var ResModel = await Res.Content.ReadFromJsonAsync<ResponseModel>();
+
+        if (Res.StatusCode.ToString() == "OK")
+            await Js.InvokeVoidAsync("toastr.success", "New company added", "Succeed");
+        else
+            await Js.InvokeVoidAsync("toastr.error", $"{ResModel.Error}", "Error");
+
+        CompanyModel = new CompanyViewModel();
+
+        //var response = await Js.InvokeAsync<JsonResponse>("swal.fire", Swal.Param());
+        //if (response.Value)
+        //    await Js.InvokeVoidAsync("toastr.success", "Message", "Title");
+        //else
+        //    await Js.InvokeVoidAsync("toastr.error", "Message", "Title");
+
+        //await Js.InvokeVoidAsync("alert", $"{str.Status} - {str.Error}");
+    }
+
+}

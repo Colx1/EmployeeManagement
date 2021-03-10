@@ -1,0 +1,69 @@
+﻿@page "/editcompany/{Id:int}"
+
+@inject HttpClient httpClient
+@inject IJSRuntime Js
+@inject NavigationManager uriHelper
+
+<div class="content px-4">
+    <div class="box">
+        <div class="box-head">
+            <h3 class="title">@Title_EditComp</h3>
+        </div>
+        <div class="box-body">
+            <EditForm Model="@CompanyModel" OnValidSubmit="@UpdateCompany">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+                @if (CompanyModel == null)
+                {
+                    <p>Loading...</p>
+                }
+                else
+                {
+                    <h3>@Title_EditComp</h3>
+                    <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+
+                        <div class="form-group my-2">
+                            <label>Company Name:</label>
+                            <input @bind-value="@CompanyModel.CompanyName" type="text" class="form-control" />
+                            <ValidationMessage For="@(() => CompanyModel.CompanyName)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary mt-2">Update Company</button>
+                    </div>
+                    <a href="/listproduct" class="btn btn-light mt-3">Back</a>
+                }
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    public string Title_EditComp { get; set; } = "Edit Company";
+
+    [Parameter]
+    public int Id { get; set; }
+
+    public CompanyViewModel CompanyModel = new CompanyViewModel();
+
+    [Inject]
+    public ApiUri ApiUri { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CompanyModel = await httpClient.GetFromJsonAsync<CompanyViewModel>
+            ($"{ApiUri.ApiUriAddress}/api/Product/GetCompanies/{Id}");
+    }
+
+    protected async Task UpdateCompany()
+    {
+        var Res = await httpClient.PutAsJsonAsync($"{ApiUri.ApiUriAddress}/api/Product/UpdateCompany/{CompanyModel.Id}", CompanyModel);
+        var ResModel = await Res.Content.ReadFromJsonAsync<ResponseModel>();
+
+        if (Res.StatusCode.ToString() == "OK")
+        {
+            await Js.InvokeVoidAsync("toastr.info", "Company updated", "Succeed");
+            uriHelper.NavigateTo("/listproduct");
+        }
+        else
+            await Js.InvokeVoidAsync("toastr.error", $"{ResModel.Error}", "Error");
+    }
+}

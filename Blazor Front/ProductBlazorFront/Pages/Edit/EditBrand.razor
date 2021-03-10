@@ -1,0 +1,81 @@
+﻿@page "/editbrand/{Id:int}"
+
+@inject HttpClient httpClient
+@inject IJSRuntime Js
+@inject NavigationManager uriHelper
+
+<div class="content px-4">
+    <div class="box">
+        <div class="box-head">
+            <h3 class="title">@Title_EditBrnd</h3>
+        </div>
+        <div class="box-body">
+            <EditForm Model="BrandModel" OnValidSubmit="@UpdateBrand">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+                <h3>@Title_EditBrnd</h3>
+                <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+
+                    <div class="form-group my-2">
+                        <label>Company:</label>
+                        <select @bind="@BrandModel.CompanyId" class="form-control">
+                            <option value="0">-- Select Company --</option>
+                            @foreach (var Company in CompanyListModel)
+                            {
+                                <option value="@Company.Id">@Company.CompanyName</option>
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => BrandModel.CompanyId)" />
+                    </div>
+
+                    <div class="form-group my-2">
+                        <label>Brand Name:</label>
+                        <input @bind-value="BrandModel.BrandName" type="text" class="form-control" />
+                        <ValidationMessage For="@(() => BrandModel.BrandName)" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary mt-2">Update Brand</button>
+                </div>
+                <a href="/listproduct" class="btn btn-light mt-3">Back</a>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    public string Title_EditBrnd { get; set; } = "Edit Brand";
+
+    [Parameter]
+    public int Id { get; set; }
+
+    public List<CompanyViewModel> CompanyListModel = new List<CompanyViewModel>();
+
+    public BrandViewModel BrandModel = new BrandViewModel();
+
+    [Inject]
+    public ApiUri ApiUri { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CompanyListModel =
+            await httpClient.GetFromJsonAsync<List<CompanyViewModel>>
+            ($"{ApiUri.ApiUriAddress}/api/Product/GetCompanies");
+
+        BrandModel = await httpClient.GetFromJsonAsync<BrandViewModel>
+            ($"{ApiUri.ApiUriAddress}/api/Product/GetBrands/false/{Id}");
+    }
+
+    protected async Task UpdateBrand()
+    {
+        var Res = await httpClient.PutAsJsonAsync
+            ($"{ApiUri.ApiUriAddress}/api/Product/UpdateBrand/{BrandModel.Id}", BrandModel);
+        var ResModel = await Res.Content.ReadFromJsonAsync<ResponseModel>();
+
+        if (Res.StatusCode.ToString() == "OK")
+        {
+            await Js.InvokeVoidAsync("toastr.info", "Brand updated", "Succeed");
+            uriHelper.NavigateTo("/listproduct");
+        }
+        else
+            await Js.InvokeVoidAsync("toastr.error", $"{ResModel.Error}", "Error");
+    }
+}

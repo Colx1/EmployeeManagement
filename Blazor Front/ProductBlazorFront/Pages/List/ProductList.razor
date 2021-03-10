@@ -1,0 +1,90 @@
+﻿@inherits LayoutComponentBase
+
+@inject HttpClient httpClient
+@inject IJSRuntime Js
+@inject NavigationManager uriHelper
+
+<div class="content px-4">
+    <div class="box">
+        <div class="box-head">
+            <h3 class="title">@Title_PrdLst</h3>
+        </div>
+        <div class="box-body">
+            <h3>@Title_PrdLst</h3>
+
+            @if (!ProductListModel.Any())
+            {
+                <p>Loading...</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Company</th>
+                                <th>Brand</th>
+                                <th>Name</th>
+                                <th>Amount</th>
+                                <th>Price</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Product in ProductListModel)
+                            {
+                                <tr>
+                                    <td>@Product.Id</td>
+                                    <td>@Product.Brand.Company.CompanyName</td>
+                                    <td>@Product.Brand.BrandName</td>
+                                    <td>@Product.Name</td>
+                                    <td>@Product.Amount</td>
+                                    <td>@Product.Price</td>
+                                    <td>
+                                        <a href="@($"/editproduct/{Product.Id}")" class="btn btn-primary">Edit</a>
+                                        <button @onclick="@(() => DeleteProductRecord(Product.Id))" class="btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private string Title_PrdLst { get; set; } = "Product List";
+
+    public List<ProductViewModel> ProductListModel = new List<ProductViewModel>();
+
+    [Inject]
+    public ApiUri ApiUri { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ProductListModel = await httpClient.GetFromJsonAsync<List<ProductViewModel>>
+                ($"{ApiUri.ApiUriAddress}/api/Product/GetProducts/true");
+    }
+
+    protected async Task DeleteProductRecord(int productId)
+    {
+        var response = await Js.InvokeAsync<JsonResponse>("swal.fire", Swal.Param());
+        if (response.Value)
+        {
+            var Res = await httpClient.DeleteAsync($"{ApiUri.ApiUriAddress}/api/Product/DeleteProduct/{productId}");
+            var ResModel = await Res.Content.ReadFromJsonAsync<ResponseModel>();
+
+            if (Res.StatusCode.ToString() == "OK")
+            {
+                await Js.InvokeVoidAsync("toastr.warning", "Product deleted", "Succeed");
+                await OnInitializedAsync();
+            }
+            else
+                await Js.InvokeVoidAsync("toastr.error", $"{ResModel.Error}", "Error");
+        }
+    }
+}

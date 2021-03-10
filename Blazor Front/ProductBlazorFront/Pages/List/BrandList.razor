@@ -1,0 +1,86 @@
+﻿@inherits LayoutComponentBase
+
+@inject HttpClient httpClient
+@inject IJSRuntime Js
+@inject NavigationManager uriHelper
+
+<div class="content px-4">
+    <div class="box">
+        <div class="box-head">
+            <h3 class="title">@Title_BrndLst</h3>
+        </div>
+        <div class="box-body">
+            <h3>@Title_BrndLst</h3>
+
+            @if (!BrandListModel.Any())
+            {
+                <p>Loading...</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Company Name</th>
+                                <th>Brand Name</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Brand in BrandListModel)
+                            {
+                                <tr>
+                                    <td>@Brand.Id</td>
+                                    <td>@Brand.Company.CompanyName</td>
+                                    <td>@Brand.BrandName</td>
+                                    <td>
+                                        <a href="@($"/editbrand/{Brand.Id}")" class="btn btn-primary">Edit</a>
+                                        <button @onclick="@(() => DeleteBrandRecord(Brand.Id))" class="btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private string Title_BrndLst { get; set; } = "Brand List";
+
+    public List<BrandViewModel> BrandListModel = new List<BrandViewModel>();
+
+    [Inject]
+    public ApiUri ApiUri { get; set; }
+
+    bool preventDefault = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        BrandListModel = await httpClient.GetFromJsonAsync<List<BrandViewModel>>
+            ($"{ApiUri.ApiUriAddress}/api/Product/GetBrands/true");
+    }
+
+    protected async Task DeleteBrandRecord(int brandId)
+    {
+        var response = await Js.InvokeAsync<JsonResponse>("swal.fire", Swal.Param());
+        if (response.Value)
+        {
+            var Res = await httpClient.DeleteAsync($"{ApiUri.ApiUriAddress}/api/Product/DeleteBrand/{brandId}");
+            var ResModel = await Res.Content.ReadFromJsonAsync<ResponseModel>();
+
+            if (Res.StatusCode.ToString() == "OK")
+            {
+                await Js.InvokeVoidAsync("toastr.warning", "Brand deleted", "Succeed");
+                uriHelper.NavigateTo("/listproduct");
+            }
+            else
+                await Js.InvokeVoidAsync("toastr.error", $"{ResModel.Error}", "Error");
+        }
+    }
+}

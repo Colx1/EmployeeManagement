@@ -1,0 +1,30 @@
+﻿@page "/"
+
+<div class="content px-4">
+    <div class="box">
+        <div class="box-head">
+                <h3 class="title">@Title</h3>
+            </div>
+        <div class="box-body">
+            <h1>Hello</h1>
+
+            <h4>I am so glad to have you here</h4>
+            <p>
+                I've shared my experience with blazor in the side menu
+                <br />
+                Farewell..
+            </p>
+            <SurveyPrompt Title="How is Blazor working for you?" />
+        </div>
+    </div>
+</div>
+
+@code {
+    private string Title { get; set; } = "Home";
+
+    //protected override async void OnAfterRender(bool firstRender)
+    //{
+    //    await js.InvokeVoidAsync("datepicker");
+    //    //base.OnAfterRender(firstRender);
+    //}
+}

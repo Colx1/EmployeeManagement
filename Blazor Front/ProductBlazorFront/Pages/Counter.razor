@@ -1,0 +1,28 @@
+﻿@page "/counter"
+
+<div class="content px-4">
+    <div class="box">
+        <div class="box-head">
+                <h3 class="title">@Title</h3>
+            </div>
+        <div class="box-body">
+            <h1>Counter</h1>
+
+            <p>Current count: @currentCount</p>
+
+            <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private string Title { get; set; } = "Counter";
+
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+}
